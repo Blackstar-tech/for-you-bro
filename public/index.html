@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jak's Tech :: birthday.js</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e14;
+    --bg-panel: #10151f;
+    --bg-terminal: #060a10;
+    --text: #dbe4ee;
+    --text-dim: #5b6b7c;
+    --border: #1c2530;
+    --accent-orange: #ff5a36;
+    --accent-green: #48e6a0;
+    --accent-yellow: #ffcc33;
+    --mono: 'JetBrains Mono', monospace;
+    --disp: 'Chakra Petch', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--mono);
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+
+  /* ambient circuit grid */
+  .bg-grid{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity:0.35;
+    mask-image: radial-gradient(ellipse at 50% 0%, black 0%, transparent 75%);
+  }
+
+  .speed-lines{
+    position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; opacity:0.25;
+  }
+  .speed-lines span{
+    position:absolute; height:1px; width:140px;
+    background:linear-gradient(90deg, transparent, var(--accent-orange), transparent);
+    animation: streak 3.4s linear infinite;
+  }
+  @keyframes streak{
+    from{ transform:translateX(-200px); }
+    to{ transform:translateX(110vw); }
+  }
+
+  section{ position:relative; z-index:1; padding: 64px 20px; max-width:900px; margin:0 auto; }
+
+  /* ---------- HERO / TERMINAL ---------- */
+  .hero{ padding-top: 56px; }
+  .terminal-window{
+    background:var(--bg-terminal);
+    border:1px solid var(--border);
+    border-radius:10px;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02);
+    overflow:hidden;
+  }
+  .terminal-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:10px 14px;
+    background:#0d1219;
+    border-bottom:1px solid var(--border);
+  }
+  .dot{ width:11px; height:11px; border-radius:50%; }
+  .dot.r{ background:#ff5f56; } .dot.y{ background:#ffbd2e; } .dot.g{ background:#27c93f; }
+  .terminal-title{ margin-left:10px; color:var(--text-dim); font-size:12.5px; letter-spacing:0.02em; }
+  .terminal-body{
+    padding:22px 20px 26px;
+    font-size:14.5px;
+    min-height:260px;
+  }
+  .terminal-body .line{ white-space:pre-wrap; word-break:break-word; margin:0 0 4px; }
+  .prompt-sym{ color:var(--accent-green); }
+  .path-sym{ color:var(--accent-orange); }
+  .ok{ color:var(--accent-green); }
+  .warn{ color:var(--accent-yellow); }
+  .cursor{
+    display:inline-block; width:8px; height:16px; background:var(--text);
+    vertical-align:-3px; animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* ---------- SPEEDOMETER ---------- */
+  .speedo-wrap{
+    display:flex; flex-direction:column; align-items:center;
+    margin-top:40px;
+    opacity:0; transform:translateY(14px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .speedo-wrap.show{ opacity:1; transform:translateY(0); }
+  .speedo{ width:min(360px, 80vw); }
+  .needle{
+    transform-origin: 150px 150px;
+    transform: rotate(-135deg);
+    transition: transform 2.2s cubic-bezier(.16,.85,.2,1.02);
+  }
+  .needle.active{ /* rotation set dynamically in JS to match the gauge scale */ }
+  .tick-num{ font-family: var(--disp); font-size:13px; fill: var(--text-dim); }
+  .tick-num.hot{ fill: var(--accent-yellow); font-weight:700; }
+  .speedo-readout{
+    font-family:var(--disp); font-weight:700;
+    font-size: clamp(64px, 12vw, 100px);
+    color:var(--accent-orange);
+    line-height:1; margin-top:-18px;
+    text-shadow: 0 0 40px rgba(255,90,54,0.35);
+  }
+  .speedo-label{
+    color:var(--text-dim); font-size:12.5px; letter-spacing:0.18em; text-transform:uppercase; margin-top:6px;
+  }
+
+  /* ---------- SECTION HEADERS ---------- */
+  .eyebrow{
+    color:var(--accent-green); font-size:12.5px; letter-spacing:0.14em; text-transform:uppercase; margin:0 0 8px;
+  }
+  h2{
+    font-family:var(--disp); font-size: clamp(24px, 4vw, 32px); margin: 0 0 26px; color:var(--text);
+    font-weight:600;
+  }
+
+  /* ---------- CHANGELOG ---------- */
+  .changelog{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:10px;
+    padding: 30px 30px 34px;
+  }
+  .changelog-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .version-tag{
+    font-family:var(--disp); font-weight:700; color:var(--accent-orange); font-size:20px;
+  }
+  .version-date{ color:var(--text-dim); font-size:13px; }
+  .changelog h3{
+    font-size:13px; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent-green);
+    margin: 22px 0 10px;
+  }
+  .changelog ul{ margin:0; padding-left:20px; }
+  .changelog li{ margin-bottom:7px; font-size:14.5px; color:var(--text); }
+  .changelog li::marker{ color:var(--accent-orange); }
+
+  /* ---------- STATS ---------- */
+  .stats-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;
+  }
+  @media (max-width: 700px){ .stats-grid{ grid-template-columns:repeat(2, 1fr); } }
+  .stat-card{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 16px; text-align:center;
+    transition: border-color .25s ease, transform .25s ease;
+  }
+  .stat-card:hover{ border-color:var(--accent-orange); transform:translateY(-3px); }
+  .stat-value{ font-family:var(--disp); font-size: clamp(22px, 3vw, 30px); font-weight:700; color:var(--accent-green); }
+  .stat-label{ font-size:11.5px; color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase; margin-top:6px; }
+
+  .code-body{
+    padding:20px 22px 24px;
+    font-size:13.5px;
+    overflow-x:auto;
+  }
+  .code-body pre{ margin:0; white-space:pre; }
+  .code-body .cmt{ color:var(--text-dim); }
+  .code-body .kw{ color:var(--accent-orange); }
+  .code-body .str{ color:var(--accent-green); }
+  .code-body .num{ color:var(--accent-yellow); }
+  .code-body .fn{ color:#7dc4ff; }
+
+  /* ---------- WISH TERMINAL ---------- */
+  .wish-window{
+    background:var(--bg-terminal); border:1px solid var(--border); border-radius:10px; padding:22px;
+  }
+  .wish-row{ display:flex; align-items:center; gap:10px; font-size:14.5px; flex-wrap:wrap; }
+  .wish-row .prompt-sym{ flex-shrink:0; }
+  #wishInput{
+    flex:1; min-width:160px;
+    background:transparent; border:none; outline:none;
+    color:var(--text); font-family:var(--mono); font-size:14.5px;
+    caret-color: var(--accent-green);
+  }
+  #wishInput::placeholder{ color:var(--text-dim); }
+  .wish-hint{ color:var(--text-dim); font-size:12px; margin-top:10px; }
+
+  /* ---------- OVERLAY ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(6,10,16,0.88);
+    opacity:0; pointer-events:none;
+    transition:opacity .4s ease;
+    text-align:center; padding:20px;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .overlay-inner h1{
+    font-family:var(--disp); font-weight:700;
+    font-size:clamp(30px, 6vw, 56px);
+    color:var(--accent-orange);
+    margin:0 0 10px;
+    text-shadow: 0 0 50px rgba(255,90,54,0.45);
+  }
+  .overlay-inner p{ color:var(--text-dim); font-size:15px; margin:0 0 22px; }
+  .overlay-inner .bike{ font-size:40px; display:inline-block; animation: ride 1.4s ease-in-out infinite; }
+  @keyframes ride{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(18px); } }
+  .close-btn{
+    background:none; border:1px solid var(--border); color:var(--text-dim);
+    font-family:var(--mono); padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px;
+  }
+  .close-btn:hover{ border-color:var(--accent-orange); color:var(--text); }
+
+  footer{ text-align:center; padding:30px 20px 50px; color:var(--text-dim); font-size:12.5px; position:relative; z-index:1; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+
+  .confetti-piece{
+    position:fixed; top:-20px; z-index:60; pointer-events:none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(110vh) rotate(540deg); opacity:0.9; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="speed-lines" id="speedLines"></div>
+
+<section class="hero">
+  <p class="eyebrow" style="text-align:center;">jak's tech</p>
+  <div class="terminal-window">
+    <div class="terminal-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="terminal-title">jaks-tech — node birthday.js</span>
+    </div>
+    <div class="terminal-body" id="termBody"></div>
+  </div>
+
+  <div class="speedo-wrap" id="speedoWrap">
+    <svg class="speedo" id="speedoSvg" viewBox="0 0 300 220"></svg>
+    <div class="speedo-readout">26</div>
+    <div class="speedo-label">years, full throttle</div>
+  </div>
+</section>
+
+<section class="changelog">
+  <p class="eyebrow">// release notes</p>
+  <div class="changelog-head">
+    <span class="version-tag">CHANGELOG.md — v26.0.0</span>
+    <span class="version-date">2026-07-15</span>
+  </div>
+
+  <h3>Added</h3>
+  <ul>
+    <li>Another year of shipping good vibes straight to production</li>
+    <li>New personal best out on the Taro — legs finally match the ambition</li>
+    <li>Achievement unlocked: <strong>Quarter Century + 1</strong></li>
+  </ul>
+
+  <h3>Changed</h3>
+  <ul>
+    <li>Sleep schedule, again, for the worse, in the name of a 2am side project</li>
+    <li>Risk tolerance on Node.js dependency upgrades: raised even higher</li>
+  </ul>
+
+  <h3>Fixed</h3>
+  <ul>
+    <li>Most bugs from the early twenties</li>
+    <li>That one wheel wobble on the Taro (mostly)</li>
+  </ul>
+
+  <h3>Known issues</h3>
+  <ul>
+    <li>Still refuses to write tests before shipping</li>
+    <li>Occasionally merges to main without pulling first</li>
+  </ul>
+</section>
+
+<section class="stats">
+  <p class="eyebrow">// system status</p>
+  <h2>uptime: 26 years, zero downtime</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value">26</div><div class="stat-label">current major version</div></div>
+    <div class="stat-card"><div class="stat-value">Node.js</div><div class="stat-label">runtime of choice</div></div>
+    <div class="stat-card"><div class="stat-value">Taro</div><div class="stat-label">top speed: unlimited</div></div>
+    <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">bugs he'll admit to</div></div>
+  </div>
+</section>
+
+<section class="wish-code">
+  <p class="eyebrow">// the actual message</p>
+  <h2>his birthday wish, compiled</h2>
+  <div class="terminal-window">
+    <div class="terminal-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="terminal-title">birthday-wish.js</span>
+    </div>
+    <div class="code-body">
+<pre><span class="cmt">// happy 26th, jak.</span>
+<span class="kw">const</span> birthdayWish = {
+  to: <span class="str">"Jak"</span>,
+  from: <span class="str">"Martin"</span>,
+  message: <span class="str">"Here's to cleaner commits, faster rides, and a</span>
+<span class="str">    year that compiles on the first try. So proud of</span>
+<span class="str">    the person you've built. Twende coffee huko delish baadaye.Na tusome"</span>,
+};
+
+<span class="fn">console</span>.log(birthdayWish.message);
+<span class="cmt">// → Here's to cleaner commits, faster rides, and a year that</span>
+<span class="cmt">//   compiles on the first try. So proud of the person you've</span>
+<span class="cmt">//   built. Let's ride soon.</span></pre>
+    </div>
+  </div>
+</section>
+
+<section class="wish">
+  <p class="eyebrow">// run this</p>
+  <h2>make a wish, jak</h2>
+  <div class="wish-window">
+    <div class="wish-row">
+      <span><span class="path-sym">jak@life</span><span class="prompt-sym">:~$</span></span>
+      <input id="wishInput" type="text" placeholder="type anything and hit enter…" autocomplete="off">
+    </div>
+    <p class="wish-hint">tip: try "happy birthday" — or just mash the keyboard, it always works</p>
+  </div>
+</section>
+
+<footer>jak's tech &middot; built by martin &middot; happy 26th, jak 🚴💨</footer>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-inner">
+    <div class="bike">🚴💨</div>
+    <h1>HAPPY 26TH, JAK</h1>
+    <p>full speed ahead — may your code compile and your rides never end.</p>
+    <button class="close-btn" id="closeOverlay">close()</button>
+  </div>
+</div>
+
+<script>
+// ---------- speed line streaks ----------
+const speedLinesEl = document.getElementById('speedLines');
+for(let i=0;i<8;i++){
+  const s = document.createElement('span');
+  s.style.top = (10 + Math.random()*80) + '%';
+  s.style.animationDelay = (Math.random()*3.4) + 's';
+  s.style.width = (80 + Math.random()*120) + 'px';
+  speedLinesEl.appendChild(s);
+}
+
+// ---------- terminal typing sequence ----------
+const termBody = document.getElementById('termBody');
+const lines = [
+  {t:'$ node birthday.js', c:''},
+  {t:'&gt; booting jak-os v25.9.9…', c:''},
+  {t:'&gt; checking dependencies…', c:''},
+  {t:'&gt; ✓ coffee   ✓ More hot girls   ✓ taro-bike.exe', c:'ok'},
+  {t:'&gt; patching age: 25 → 26', c:''},
+  {t:'&gt; applying patch… done', c:'ok'},
+  {t:'&gt; WARNING: bugs from early twenties not fully resolved (charming — keeping as feature)', c:'warn'},
+  {t:'&gt; starting speedometer.exe', c:''},
+];
+
+let li = 0;
+function typeLine(){
+  if(li >= lines.length){
+    const wrap = document.getElementById('speedoWrap');
+    wrap.classList.add('show');
+    requestAnimationFrame(()=>{
+      setTimeout(()=>{
+        const needle = document.getElementById('needle');
+        if(needle){
+          needle.style.transform = `rotate(${angleFor(26)}deg)`;
+          needle.classList.add('active');
+        }
+      }, 200);
+    });
+    return;
+  }
+  const {t, c} = lines[li];
+  const p = document.createElement('p');
+  p.className = 'line' + (c ? ' '+c : '');
+  termBody.appendChild(p);
+
+  let i = 0;
+  const plain = t.replace(/&gt;/g,'>');
+  const speed = 18;
+  function step(){
+    p.innerHTML = plain.slice(0, i).replace(/</g,'&lt;') + '<span class="cursor"></span>';
+    i++;
+    if(i <= plain.length){
+      setTimeout(step, speed);
+    } else {
+      p.innerHTML = plain;
+      li++;
+      setTimeout(typeLine, 260);
+    }
+  }
+  step();
+}
+setTimeout(typeLine, 350);
+
+// ---------- speedometer SVG ----------
+const svg = document.getElementById('speedoSvg');
+const cx = 150, cy = 150, r = 118;
+const minA = -135, maxA = 135, minV = 0, maxV = 180;
+
+function polar(cx, cy, r, angleDeg){
+  const a = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+}
+function angleFor(v){ return minA + (maxA - minA) * (v - minV) / (maxV - minV); }
+
+// arc background
+const startP = polar(cx, cy, r, minA);
+const endP = polar(cx, cy, r, maxA);
+const arcPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+arcPath.setAttribute('d', `M ${startP.x} ${startP.y} A ${r} ${r} 0 1 1 ${endP.x} ${endP.y}`);
+arcPath.setAttribute('fill','none');
+arcPath.setAttribute('stroke','#1c2530');
+arcPath.setAttribute('stroke-width','10');
+arcPath.setAttribute('stroke-linecap','round');
+svg.appendChild(arcPath);
+
+// progress arc up to 26
+const prog = document.createElementNS('http://www.w3.org/2000/svg','path');
+const p26 = polar(cx, cy, r, angleFor(26));
+prog.setAttribute('d', `M ${startP.x} ${startP.y} A ${r} ${r} 0 1 1 ${p26.x} ${p26.y}`);
+prog.setAttribute('fill','none');
+prog.setAttribute('stroke','#ff5a36');
+prog.setAttribute('stroke-width','10');
+prog.setAttribute('stroke-linecap','round');
+prog.setAttribute('opacity','0.85');
+svg.appendChild(prog);
+
+// ticks + numbers
+const minorTicks = [0,20,40,60,80,100,120,140,160,180];
+const majorLabels = [0,60,120,180];
+
+minorTicks.forEach(v=>{
+  const ang = angleFor(v);
+  const inner = polar(cx, cy, r-14, ang);
+  const outer = polar(cx, cy, r-4, ang);
+  const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
+  tick.setAttribute('x1', inner.x); tick.setAttribute('y1', inner.y);
+  tick.setAttribute('x2', outer.x); tick.setAttribute('y2', outer.y);
+  tick.setAttribute('stroke', '#5b6b7c');
+  tick.setAttribute('stroke-width', 1.5);
+  svg.appendChild(tick);
+
+  if(majorLabels.includes(v)){
+    const numPos = polar(cx, cy, r-32, ang);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', numPos.x); txt.setAttribute('y', numPos.y);
+    txt.setAttribute('text-anchor','middle');
+    txt.setAttribute('class', 'tick-num');
+    txt.textContent = v;
+    svg.appendChild(txt);
+  }
+});
+
+// special highlighted marker for 26 (the birthday value)
+const hotAng = angleFor(26);
+const hotInner = polar(cx, cy, r-20, hotAng);
+const hotOuter = polar(cx, cy, r-2, hotAng);
+const hotTick = document.createElementNS('http://www.w3.org/2000/svg','line');
+hotTick.setAttribute('x1', hotInner.x); hotTick.setAttribute('y1', hotInner.y);
+hotTick.setAttribute('x2', hotOuter.x); hotTick.setAttribute('y2', hotOuter.y);
+hotTick.setAttribute('stroke', '#ffcc33');
+hotTick.setAttribute('stroke-width', 3);
+svg.appendChild(hotTick);
+
+const hotNumPos = polar(cx, cy, r-46, hotAng);
+const hotTxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+hotTxt.setAttribute('x', hotNumPos.x); hotTxt.setAttribute('y', hotNumPos.y);
+hotTxt.setAttribute('text-anchor','middle');
+hotTxt.setAttribute('class', 'tick-num hot');
+hotTxt.textContent = '26';
+svg.appendChild(hotTxt);
+
+
+// needle
+const needleLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+needleLine.setAttribute('id','needle');
+needleLine.setAttribute('class','needle');
+needleLine.setAttribute('x1', cx); needleLine.setAttribute('y1', cy);
+needleLine.setAttribute('x2', cx); needleLine.setAttribute('y2', cy - r + 30);
+needleLine.setAttribute('stroke', '#ff5a36');
+needleLine.setAttribute('stroke-width', 4);
+needleLine.setAttribute('stroke-linecap','round');
+svg.appendChild(needleLine);
+
+const hub = document.createElementNS('http://www.w3.org/2000/svg','circle');
+hub.setAttribute('cx', cx); hub.setAttribute('cy', cy); hub.setAttribute('r', 8);
+hub.setAttribute('fill', '#ff5a36');
+svg.appendChild(hub);
+
+// ---------- wish + confetti ----------
+const wishInput = document.getElementById('wishInput');
+const overlay = document.getElementById('overlay');
+document.getElementById('closeOverlay').addEventListener('click', ()=> overlay.classList.remove('show'));
+
+function burstConfetti(){
+  const colors = ['#ff5a36','#48e6a0','#ffcc33','#dbe4ee'];
+  for(let i=0;i<70;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 5 + Math.random()*6;
+    el.style.width = size+'px';
+    el.style.height = (size*0.4)+'px';
+    el.style.left = Math.random()*100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (2.2 + Math.random()*1.8)+'s';
+    el.style.opacity = 0.9;
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 4200);
+  }
+}
+
+wishInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && wishInput.value.trim().length){
+    burstConfetti();
+    overlay.classList.add('show');
+    wishInput.value = '';
+  }
+});
+</script>
+</body>
+</html>

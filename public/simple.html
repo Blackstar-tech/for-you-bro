@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jak's Tech :: Happy Birthday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14;
+    --panel:#10151f;
+    --border:#1c2530;
+    --text:#dbe4ee;
+    --dim:#5b6b7c;
+    --orange:#ff5a36;
+    --green:#48e6a0;
+    --mono:'JetBrains Mono', monospace;
+    --disp:'Chakra Petch', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh;
+    background:var(--bg); color:var(--text);
+    font-family:var(--mono);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .card{
+    max-width:480px; width:100%;
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:14px; padding:36px 32px 32px;
+    text-align:center;
+    box-shadow:0 30px 70px -30px rgba(0,0,0,0.6);
+  }
+  .eyebrow{
+    color:var(--green); font-size:12px; letter-spacing:0.14em; text-transform:uppercase; margin:0 0 14px;
+  }
+  .big{
+    font-family:var(--disp); font-weight:700; color:var(--orange);
+    font-size:clamp(48px,10vw,72px); line-height:1; margin:0;
+    text-shadow:0 0 40px rgba(255,90,54,0.3);
+  }
+  .sub{
+    font-family:var(--disp); font-weight:600; font-size:20px; margin:8px 0 22px; color:var(--text);
+  }
+  .terminal{
+    background:#060a10; border:1px solid var(--border); border-radius:8px;
+    padding:16px 18px; text-align:left; font-size:13.5px; color:var(--green);
+    min-height:24px; margin-bottom:22px;
+  }
+  .cursor{
+    display:inline-block; width:7px; height:14px; background:var(--text);
+    vertical-align:-2px; animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+  p.msg{ font-size:14.5px; color:var(--dim); line-height:1.6; margin:0 0 6px; }
+  .tags{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:18px; }
+  .tag{
+    font-size:11.5px; color:var(--dim); border:1px solid var(--border); border-radius:999px;
+    padding:5px 12px; letter-spacing:0.03em;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <p class="eyebrow">jak's tech</p>
+    <p class="big">26</p>
+    <p class="sub">Happy Birthday, Jak</p>
+
+    <div class="terminal" id="term"></div>
+
+    <p class="msg">Here's to another year of clean commits, faster rides, and the occasional bug you'll swear was a feature.</p>
+
+    <div class="tags">
+      <span class="tag">Node.js</span>
+      <span class="tag">Taro bike</span>
+      <span class="tag">v26.0.0</span>
+    </div>
+  </div>
+
+<script>
+  const term = document.getElementById('term');
+  const text = "> console.log('Happy 26th, Jak 🚴💨');";
+  let i = 0;
+  function type(){
+    term.innerHTML = text.slice(0,i) + '<span class="cursor"></span>';
+    i++;
+    if(i <= text.length) setTimeout(type, 32);
+  }
+  type();
+</script>
+</body>
+</html>
